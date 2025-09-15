@@ -117,15 +117,3 @@ python-dotenv
 * 🎥 Extend to platforms like YouTube and Reddit.
 
 ---
-
-## 👨‍💻 Contributors
-
-* **M. Shashikanth**
-* **M. Yeshwanth Reddy**
-* **B. Kevin**
-* **T. Yashwanth Raj**
-
-Under the guidance of **Dr. T. V. G. Sridevi**
-Department of CSE (AI & ML), KMIT
-
----
