@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ platform }} Analysis</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1f1f1f, #343a40, #212529);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 1rem;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .fade-in {
+      animation: fadeIn 1s ease-in-out both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-control, .form-select {
+      background-color: #1c1c1c;
+      border: 1px solid #555;
+      color: white;
+    }
+
+    .form-control::placeholder {
+      color: #aaa;
+    }
+
+    .btn-primary {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+
+    .input-group-custom {
+      margin-bottom: 1rem;
+    }
+
+    #chart-col {
+      max-width: 250px;
+    }
+
+    #sentimentPieChart {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .sentiment-counts p {
+      font-size: 0.85rem;
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container py-4">
+    <br><br><br><br>
+    <div class="text-center mb-4 fade-in">
+      <h2 class="fw-bold">{{ platform }} Sentiment Analysis</h2>
+      <p class="mt-2">
+        {% if platform == 'Instagram' %}
+          📷 Analyze emotional responses to your Instagram posts.
+        {% elif platform == 'Threads' %}
+          💬 Evaluate how your Threads content resonates.
+        {% elif platform == 'X' %}
+          ✨Paste anyone's Tweet’s Status ID to get public reaction insights.
+        {% endif %}
+      </p>
+    </div>
+
+    <form onsubmit="event.preventDefault(); getInsights();">
+      <div class="row g-2 align-items-center input-group-custom justify-content-center">
+        {% if platform == 'Instagram' %}
+          <div class="col-md-4 fade-in">
+            <label for="caption-select" class="form-label">Caption:</label>
+            <select class="form-select" id="caption-select">
+              <option value="">-- Select Caption --</option>
+              {% for post in posts %}
+                <option value="{{ post.id }}">{{ post.caption[:60] }}...</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2 fade-in">
+            <label for="date-input" class="form-label">Date:</label>
+            <input type="date" class="form-control" id="date-input">
+          </div>
+        {% elif platform == 'Threads' %}
+          <div class="col-md-4 fade-in">
+            <label for="thread-select" class="form-label">Thread:</label>
+            <select class="form-select" id="thread-select">
+              <option value="">-- Select Thread --</option>
+              {% for post in posts %}
+                <option value="{{ post.id }}">{{ post.text[:60] }}...</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2 fade-in">
+            <label for="date-input" class="form-label">Date:</label>
+            <input type="date" class="form-control" id="date-input">
+          </div>
+        {% elif platform == 'X' %}
+          <div class="col-md-6 fade-in">
+            <label for="status-id" class="form-label"><br>Tweet Status ID:</label>
+            <input type="text" class="form-control" id="status-id" placeholder="e.g. 1915967959018996065">
+            <small class="form-text">
+              Example: <code>1915967959018996065</code>
+            </small>
+          </div>
+        {% endif %}
+
+        <div class="col-md-2 d-grid fade-in">
+          <label class="form-label invisible">Get</label>
+          <button class="btn btn-primary" type="submit">Get Insights</button>
+        </div>
+      </div>
+    </form>
+
+    <div id="loading-spinner" class="text-center my-3" style="display: none;">
+      <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div id="sentiment-filters" class="text-center mb-3 fade-in" style="display: none;">
+      <button class="btn btn-outline-success mx-1" onclick="filterSentiments('Positive')">Positive</button>
+      <button class="btn btn-outline-danger mx-1" onclick="filterSentiments('Negative')">Negative</button>
+      <button class="btn btn-outline-secondary mx-1" onclick="filterSentiments('Neutral')">Neutral</button>
+      <button class="btn btn-outline-light mx-1" onclick="filterSentiments('All')">Show All</button>
+    </div>
+
+    <div class="row">
+      <div class="col-md-9">
+        <div id="results" class="mt-3"></div>
+      </div>
+      <div class="col-md-3 fade-in" id="chart-col">
+        <canvas id="sentimentPieChart"></canvas>
+        <div class="sentiment-counts text-center mt-2">
+          <p class="text-success">😊 Positive: <span id="pos-count">0</span></p>
+          <p class="text-secondary">😐 Neutral: <span id="neu-count">0</span></p>
+          <p class="text-danger">😠 Negative: <span id="neg-count">0</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allInsights = [];
+
+    async function getInsights() {
+      const selectedCaption = document.getElementById('caption-select')?.value || null;
+      const selectedThread = document.getElementById('thread-select')?.value || null;
+      const statusId = document.getElementById('status-id')?.value || null;
+      const date = document.getElementById('date-input')?.value || null;
+
+      const data = {
+        platform: "{{ platform }}",
+        caption: selectedCaption,
+        thread: selectedThread,
+        status_id: statusId,
+        date: date
+      };
+
+      const spinner = document.getElementById('loading-spinner');
+      const resultsDiv = document.getElementById('results');
+      const filtersDiv = document.getElementById('sentiment-filters');
+
+      resultsDiv.innerHTML = "";
+      filtersDiv.style.display = "none";
+      spinner.style.display = 'block';
+
+      try {
+        const response = await fetch('/api/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const results = await response.json();
+        spinner.style.display = 'none';
+
+        if (results.length === 0) {
+          resultsDiv.innerHTML = "<p class='text-muted'>No comments found.</p>";
+          return;
+        }
+
+        allInsights = results;
+        filtersDiv.style.display = "block";
+        renderInsights(allInsights);
+      } catch (error) {
+        spinner.style.display = 'none';
+        resultsDiv.innerHTML = "<p class='text-danger'>Failed to load insights. Please try again.</p>";
+        console.error(error);
+      }
+    }
+
+    function renderInsights(insights) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "";
+
+      let pos = 0, neu = 0, neg = 0;
+
+      insights.forEach(item => {
+        if (item.sentiment === 'Positive') pos++;
+        else if (item.sentiment === 'Negative') neg++;
+        else neu++;
+
+        const commentBlock = `
+          <div class="card mb-3 text-dark bg-light fade-in">
+            <div class="card-body">
+              <p><strong>User:</strong> ${item.username}</p>
+              <p><strong>Comment:</strong> ${item.comment}</p>
+              <span class="badge bg-${item.sentiment === 'Positive' ? 'success' : item.sentiment === 'Negative' ? 'danger' : 'secondary'}">${item.sentiment}</span>
+            </div>
+          </div>`;
+        resultsDiv.innerHTML += commentBlock;
+      });
+
+      document.getElementById('pos-count').textContent = pos;
+      document.getElementById('neu-count').textContent = neu;
+      document.getElementById('neg-count').textContent = neg;
+
+      updatePieChart(pos, neu, neg);
+    }
+
+    function filterSentiments(sentiment) {
+      if (sentiment === 'All') {
+        renderInsights(allInsights);
+      } else {
+        const filtered = allInsights.filter(item => item.sentiment === sentiment);
+        renderInsights(filtered);
+      }
+    }
+
+    let pieChart = null;
+
+    function updatePieChart(pos, neu, neg) {
+      const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+      const data = {
+        labels: ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+          data: [pos, neu, neg],
+          backgroundColor: ['#198754', '#6c757d', '#dc3545'],
+          borderWidth: 1
+        }]
+      };
+
+      if (pieChart) {
+        pieChart.data.datasets[0].data = [pos, neu, neg];
+        pieChart.update();
+      } else {
+        pieChart = new Chart(ctx, {
+          type: 'pie',
+          data: data,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

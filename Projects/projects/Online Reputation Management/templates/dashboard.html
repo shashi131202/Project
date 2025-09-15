@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentiment Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e3f2fd, #fce4ec, #fff3e0);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 1rem;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    .fade-in {
+      animation: fadeIn 1s ease-in-out both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .custom-alert {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #bee5eb;
+      border-radius: 0.75rem;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    }
+
+    .chart-container {
+      width: 5cm;
+      height: 5cm;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+
+    <!-- Alert Box -->
+    <div class="alert custom-alert text-center fade-in mb-5" role="alert">
+      <h1 class="alert-heading fw-bold">📊 Online Reputation Management Dashboard</h1>
+      <p class="mt-2">
+        In today's digital landscape, brand perception is shaped heavily by social media. This tool empowers businesses, marketers, and content creators to analyze public sentiment from Instagram, Threads, and X (formerly Twitter) comments and replies in real time.
+      </p>
+      <hr>
+      <p>
+        🔍 <strong>How It Works:</strong><br>
+        The system fetches audience interactions — comments from Instagram, replies from Threads, and responses from X — and analyzes them using the <strong>CardiffNLP RoBERTa-based sentiment model</strong>, categorizing them as <span class="badge bg-success">Positive</span>, <span class="badge bg-secondary">Neutral</span>, or <span class="badge bg-danger">Negative</span>.
+      </p>
+      <p class="mt-3">
+        📈 <strong>Key Features:</strong>
+        <ul class="text-start d-inline-block">
+          <li>Combined insights from multiple platforms in one unified view.</li>
+          <li>Platform-specific pages for focused analysis by post or date.</li>
+          <li>Responsive interface built with HTML + Bootstrap.</li>
+          <li>Live data extraction with JavaScript-based async requests.</li>
+          <li>Secure API usage with environment variable protection.</li>
+          <li><strong>Twitter/X cooldown:</strong> To respect API limits, sentiment extraction from X can only be performed once every <strong>15 minutes</strong>.</li>
+        </ul>
+      </p>
+      <p class="mb-0">
+        ✅ Select the platforms you want to analyze below, or explore individual platform pages to dive deeper.
+      </p>
+    </div>
+
+    <!-- Platform Selection -->
+    <form id="dashboard-form" class="mb-4 text-center">
+      <h5>Select Platforms for Combined Insights:</h5>
+      <div class="form-check form-check-inline fade-in">
+        <input class="form-check-input" type="checkbox" value="Instagram" id="checkInstagram">
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" style="width: 24px;"> Instagram
+      </div>
+      <div class="form-check form-check-inline fade-in">
+        <input class="form-check-input" type="checkbox" value="Threads" id="checkThreads">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Threads_%28app%29.svg" style="width: 24px;"> Threads
+      </div>
+      <div class="form-check form-check-inline fade-in">
+        <input class="form-check-input" type="checkbox" value="X" id="checkX">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg" style="width: 24px;"> X
+      </div>
+      <div class="mt-3 fade-in">
+        <button type="button" class="btn btn-primary" onclick="getInsights()">Get Insights</button>
+      </div>
+    </form>
+
+    <!-- Individual Pages -->
+    <div class="text-center mb-4">
+      <h5>Analyze Individual Platforms:</h5>
+      <a href="/platform/Instagram" class="btn btn-outline-success fade-in"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="logo" style="width: 24px; height: 24px; margin-right: 5px;">Instagram</a>
+      <a href="/platform/Threads" class="btn btn-outline-success fade-in">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Threads_%28app%29.svg" class="logo" style="width: 24px; height: 24px; margin-right: 5px;">Threads</a>
+      <a href="/platform/X" class="btn btn-outline-success fade-in">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg" class="logo" style="width: 24px; height: 24px; margin-right: 5px;">X</a>
+    </div>
+
+    <!-- Spinner -->
+    <div id="loading-spinner" class="text-center my-4" style="display: none;">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div id="filter-buttons" class="text-center mb-4 fade-in" style="display: none;">
+      <h5>Filter by Sentiment:</h5>
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-success" onclick="filterBySentiment('Positive')">Positive</button>
+        <button type="button" class="btn btn-secondary" onclick="filterBySentiment('Neutral')">Neutral</button>
+        <button type="button" class="btn btn-danger" onclick="filterBySentiment('Negative')">Negative</button>
+        <button type="button" class="btn btn-outline-dark" onclick="displayInsights(allInsights)">Show All</button>
+      </div>
+    </div>
+
+    <!-- Insights Container -->
+    <div id="insights-container" class="row g-4"></div>
+
+    <!-- Sentiment Pie Chart + Counts -->
+    <div id="sentiment-distribution" class="text-center mb-4 fade-in" style="display: none;">
+      <h5>Sentiment Distribution:</h5>
+      <div class="d-flex justify-content-center align-items-start flex-wrap">
+        <canvas id="sentimentChart" width="188" height="188" style="width: 5cm; height: 5cm;"></canvas>
+        <div class="text-start ms-4" style="font-size: 1rem;">
+          <p class="mb-2"><span style="color: #198754;">😊</span> <strong>Positive:</strong> <span id="positiveCount">0</span></p>
+          <p class="mb-2"><span style="color: #6c757d;">😐</span> <strong>Neutral:</strong> <span id="neutralCount">0</span></p>
+          <p class="mb-0"><span style="color: #dc3545;">😠</span> <strong>Negative:</strong> <span id="negativeCount">0</span></p>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Script -->
+    <script>
+      let allInsights = [];
+      let sentimentChart = null;
+
+      function getInsights() {
+        const platforms = [];
+        if (document.getElementById('checkInstagram').checked) platforms.push('Instagram');
+        if (document.getElementById('checkThreads').checked) platforms.push('Threads');
+        if (document.getElementById('checkX').checked) platforms.push('X');
+
+        const spinner = document.getElementById('loading-spinner');
+        const container = document.getElementById('insights-container');
+        const filterButtons = document.getElementById('filter-buttons');
+        const sentimentDistribution = document.getElementById('sentiment-distribution');
+
+        container.innerHTML = '';
+        spinner.style.display = 'block';
+
+        fetch('/api/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platforms })
+        })
+        .then(res => res.json())
+        .then(data => {
+          spinner.style.display = 'none';
+          allInsights = data;
+          displayInsights(data);
+
+          filterButtons.style.display = 'block';
+          sentimentDistribution.style.display = 'block';
+        })
+        .catch(err => {
+          spinner.style.display = 'none';
+          console.error('Error fetching insights:', err);
+        });
+      }
+
+      function displayInsights(insights) {
+        const container = document.getElementById('insights-container');
+        container.innerHTML = '';
+
+        insights.forEach(item => {
+          const col = document.createElement('div');
+          col.className = 'col-md-6 col-lg-4';
+
+          const logos = {
+            Instagram: 'https://cdn-icons-png.flaticon.com/512/2111/2111463.png',
+            Threads: 'https://upload.wikimedia.org/wikipedia/commons/0/01/Threads_%28app%29.svg',
+            X: 'https://cdn-icons-png.flaticon.com/512/5968/5968830.png'
+          };
+          const platformLogo = logos[item.platform] || '';
+
+          col.innerHTML = `
+            <div class="card p-3 fade-in">
+              <div><img src="${platformLogo}" alt="${item.platform} logo" style="width: 20px; height: 20px; margin-right: 6px;">
+              <strong>@${item.username}</strong></div>
+              <div>${item.comment}</div>
+              <div class="mt-2">
+                <span class="badge bg-${item.sentiment === 'Positive' ? 'success' : item.sentiment === 'Negative' ? 'danger' : 'secondary'}">${item.sentiment}</span>
+              </div>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+
+        updateSentimentChart(insights);
+      }
+
+      function filterBySentiment(sentimentType) {
+        const filtered = allInsights.filter(item => item.sentiment === sentimentType);
+        displayInsights(filtered);
+      }
+
+      function updateSentimentChart(insights) {
+        const counts = { Positive: 0, Neutral: 0, Negative: 0 };
+        insights.forEach(item => counts[item.sentiment]++);
+
+        // Update count display
+        document.getElementById('positiveCount').textContent = counts.Positive;
+        document.getElementById('neutralCount').textContent = counts.Neutral;
+        document.getElementById('negativeCount').textContent = counts.Negative;
+
+        const ctx = document.getElementById('sentimentChart').getContext('2d');
+        const data = {
+          labels: ['Positive', 'Neutral', 'Negative'],
+          datasets: [{
+            label: 'Sentiment Distribution',
+            data: [counts.Positive, counts.Neutral, counts.Negative],
+            backgroundColor: ['#198754', '#6c757d', '#dc3545'],
+            borderWidth: 1
+          }]
+        };
+
+        const options = {
+          responsive: false,
+          plugins: {
+            legend: { display: false }
+          }
+        };
+
+        if (sentimentChart) {
+          sentimentChart.data = data;
+          sentimentChart.update();
+        } else {
+          sentimentChart = new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: options
+          });
+        }
+      }
+
+    </script>
+  </div>
+</body>
+</html>
