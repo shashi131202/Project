@@ -1,9 +1,13 @@
 ---
-# Online Reputation Management Tool
+
+# 🌐 Online Reputation Management Tool
 
 ## 📌 Overview
 
-The Online Reputation Management Tool is a web-based dashboard that helps businesses, content creators, and digital marketers monitor public sentiment across multiple social media platforms. It integrates with **Instagram, Threads, and X (Twitter)** APIs to fetch comments/replies and uses a **RoBERTa-based NLP model** for sentiment analysis.
+The Online Reputation Management Tool is a web-based dashboard that helps businesses, content creators, and digital marketers monitor public sentiment across multiple social media platforms.
+It integrates with **Instagram, Threads, and X (Twitter)** APIs to fetch comments/replies and uses a **RoBERTa-based NLP model** for sentiment analysis.
+
+---
 
 ## ✨ Features
 
@@ -14,6 +18,8 @@ The Online Reputation Management Tool is a web-based dashboard that helps busine
 * 🔐 **Secure API Integration** – API tokens are stored in `.env` files to ensure safe usage.
 * 🌐 **Responsive UI** – Built with **Flask, HTML5, Bootstrap, and JavaScript**.
 
+---
+
 ## 🏗️ Architecture
 
 The system consists of:
@@ -23,7 +29,7 @@ The system consists of:
 3. **NLP Module** – RoBERTa model for sentiment classification.
 4. **API Integration Layer** – Connects with Instagram Graph API, Threads API, and Twitter API.
 
-![Architecture Diagram](docs/architecture.png) *(Add image if available)*
+---
 
 ## 🚀 Installation & Setup
 
@@ -49,15 +55,17 @@ pip install -r requirements.txt
 
 ### 4. Setup Environment Variables
 
-Create a `.env` file and add:
+Create a `.env` file in the project root:
 
 ```ini
-INSTAGRAM_ACCESS_TOKEN=your_instagram_token
-INSTAGRAM_USER_ID=your_instagram_user_id
-THREADS_ACCESS_TOKEN=your_threads_token
-X_BEARER_TOKEN=your_twitter_bearer_token
-X_USER_ID=your_twitter_user_id
+INSTAGRAM_ACCESS_TOKEN="your_instagram_token"
+INSTAGRAM_USER_ID="your_instagram_user_id"
+THREADS_ACCESS_TOKEN="your_threads_token"
+X_BEARER_TOKEN="your_twitter_bearer_token"
+X_USER_ID="your_twitter_user_id"
 ```
+
+⚠️ Keep your `.env` file private (never commit it to Git).
 
 ### 5. Run the Application
 
@@ -65,7 +73,9 @@ X_USER_ID=your_twitter_user_id
 python app.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000) in your browser.
+Now open [http://localhost:5000](http://localhost:5000) in your browser.
+
+---
 
 ## 📂 Project Structure
 
@@ -74,10 +84,30 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 ├── templates/
 │   ├── dashboard.html      # Main dashboard
 │   └── platform_page.html  # Individual platform analysis pages
+├── static/                # (Optional: CSS/JS files if separated)
 ├── requirements.txt       # Python dependencies
 ├── .env                   # API tokens (not committed to Git)
 └── README.md              # Project documentation
 ```
+
+---
+
+## 🛠️ Example Requirements File
+
+`requirements.txt`
+
+```
+flask
+transformers
+torch
+scipy
+pandas
+matplotlib
+requests
+python-dotenv
+```
+
+---
 
 ## 🔮 Future Enhancements
 
@@ -85,6 +115,8 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 * 📢 Real-time alerts for sudden reputation shifts.
 * 🌍 Support for multilingual sentiment analysis.
 * 🎥 Extend to platforms like YouTube and Reddit.
+
+---
 
 ## 👨‍💻 Contributors
 
