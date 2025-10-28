@@ -128,7 +128,8 @@ For Indian stocks, **add `.NS`** to the symbol (e.g., `TCS.NS`, `INFY.NS`), or j
 
 **Response:**
 
-> *(Displays chart)*
+![Stock Chart Example](financialchatbot/stock.png)
+
 > Plot displayed above.
 
 ---
